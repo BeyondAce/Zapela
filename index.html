@@ -1,806 +1,699 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <title>Zapela.gg — Minecraft Plugin Platform</title>
-  <meta name="description"
-    content="The open platform for Minecraft plugins, mods, and server setups. Upload your work, track downloads, and discover tools.">
+  <meta name="description" content="The open platform for Minecraft plugins, mods, and server setups.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap"
-    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-  <!-- TOAST NOTIFICATIONS -->
-  <div id="toasts"></div>
+<!-- TOASTS -->
+<div id="toasts"></div>
+<!-- MODALS -->
+<div id="modal-root"></div>
 
-  <!-- ═══════════════════════════════════════
+<!-- ═══════════════════════════════════════
+  COMMAND PALETTE SEARCH OVERLAY
+═══════════════════════════════════════ -->
+<div id="search-overlay">
+  <div class="sp-box">
+    <div class="sp-head">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+      </svg>
+      <input id="sp-input" type="text" placeholder="Search plugins, authors, categories…" autocomplete="off">
+      <button class="sp-esc" onclick="closeSearch()">ESC</button>
+    </div>
+    <div class="sp-filters">
+      <button class="sp-cat" data-cat="ECONOMY"    onclick="setSpFilter('ECONOMY',this)">Economy</button>
+      <button class="sp-cat" data-cat="PVP"         onclick="setSpFilter('PVP',this)">PVP</button>
+      <button class="sp-cat" data-cat="RPG"         onclick="setSpFilter('RPG',this)">RPG</button>
+      <button class="sp-cat" data-cat="ANTI-GRIEF"  onclick="setSpFilter('ANTI-GRIEF',this)">Anti-Grief</button>
+      <button class="sp-cat" data-cat="GAMEMODE"    onclick="setSpFilter('GAMEMODE',this)">Gamemode</button>
+      <button class="sp-cat" data-cat="FACTIONS"    onclick="setSpFilter('FACTIONS',this)">Factions</button>
+      <button class="sp-cat" data-cat="UTILITY"     onclick="setSpFilter('UTILITY',this)">Utility</button>
+      <button class="sp-cat" data-cat="SETUP"       onclick="setSpFilter('SETUP',this)">Setup</button>
+    </div>
+    <div class="sp-results" id="sp-results">
+      <div class="sp-empty">Start typing to search plugins…</div>
+    </div>
+    <div class="sp-footer">
+      <span><kbd>↑↓</kbd> navigate</span>
+      <span><kbd>Enter</kbd> open</span>
+      <span><kbd>Esc</kbd> close</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
   NAVBAR
 ═══════════════════════════════════════ -->
-  <nav id="nav">
-    <div class="nlogo" onclick="G('landing')">ZAPELA<em>.gg</em></div>
+<nav id="nav">
+  <div class="nlogo" onclick="G('landing')">ZAPELA<em>.gg</em></div>
 
-    <!-- SEARCH BAR -->
-    <div class="ns" id="ns-wrap">
-      <select class="ns-cat" id="ns-cat" onchange="nsF()">
-        <option value="">All</option>
-        <option value="ECONOMY">Economy</option>
-        <option value="PVP">PVP</option>
-        <option value="RPG">RPG</option>
-        <option value="ANTI-GRIEF">Anti-Grief</option>
-        <option value="GAMEMODE">Gamemode</option>
-        <option value="FACTIONS">Factions</option>
-        <option value="UTILITY">Utility</option>
-        <option value="SETUP">Setup</option>
-      </select>
-      <input type="text" class="ns-inp" id="ns-inp" placeholder="Search 2,847 plugins..." oninput="nsF()"
-        onfocus="nsO()" autocomplete="off" onkeydown="if(event.key==='Enter')nsS();if(event.key==='Escape')nsC()">
-      <button class="ns-btn" onclick="nsS()">GO</button>
-      <div class="ns-dd" id="ns-dd"></div>
-    </div>
+  <button class="nsearch-trigger" onclick="openSearch()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+    </svg>
+    <span class="sp-placeholder">Search plugins…</span>
+    <span class="nsearch-kbd">Ctrl K</span>
+  </button>
 
-    <!-- NAV RIGHT -->
-    <div class="nright">
-      <button class="nlnk active" id="nl-home" onclick="G('landing')">Home</button>
-      <button class="nlnk" id="nl-browse" onclick="scrollBrowse()">Browse</button>
-      <button id="nav-lb" class="btn btn-g" style="display:flex" onclick="G('auth');swT('login')">Login</button>
-      <button id="nav-rb" class="btn btn-p" style="display:flex" onclick="G('auth');swT('register')">Get
-        Started</button>
-      <button id="nav-db" class="nlnk" style="display:none" onclick="G('dash')">Dashboard</button>
-      <div id="nav-av" class="av av-md" style="display:none" onclick="G('dash')">ZP</div>
-      <button class="btn-icon" onclick="toggleTP()" title="Themes &amp; Settings">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-          stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="3" />
-          <path
-            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06-.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-        </svg>
-      </button>
-      <button class="hburg" id="hburg" onclick="toggleMM()">
-        <span></span><span></span><span></span>
-      </button>
-    </div>
-  </nav>
-
-  <!-- MOBILE MENU -->
-  <div id="mmenu">
-    <div style="display:flex;gap:.5rem;margin-bottom:.3rem;">
-      <input type="text" id="ms-inp" class="fi" placeholder="Search plugins..." style="flex:1;">
-      <button class="btn btn-p" style="padding:9px 12px;" onclick="mSearch()">→</button>
-    </div>
-    <button class="mmb" onclick="G('landing');closeMM()">🏠 Home</button>
-    <button class="mmb" onclick="scrollBrowse();closeMM()">🔍 Browse Plugins</button>
-    <button class="mmb" id="mm-lb" onclick="G('auth');swT('login');closeMM()">Login</button>
-    <button class="mmb pri" id="mm-rb" onclick="G('auth');swT('register');closeMM()">Get Started Free</button>
-    <button class="mmb" id="mm-db" style="display:none" onclick="G('dash');closeMM()">Dashboard</button>
-    <button class="mmb" id="mm-lo" style="display:none" onclick="logout()">Logout</button>
+  <div class="nright">
+    <button class="nlnk active" id="nl-home" onclick="G('landing')">Home</button>
+    <button class="nlnk" onclick="scrollBrowse()">Browse</button>
+    <button id="nav-lb" class="btn btn-g" style="display:flex" onclick="G('auth');swT('login')">Login</button>
+    <button id="nav-rb" class="btn btn-p" style="display:flex" onclick="G('auth');swT('register')">Get Started</button>
+    <button id="nav-db" class="nlnk" style="display:none" onclick="G('dash')">Dashboard</button>
+    <div id="nav-av" class="av av-md" style="display:none" onclick="G('dash')">ZP</div>
+    <button class="btn-icon" onclick="toggleTP()" title="Themes">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06-.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+    </button>
+    <button class="hburg" id="hburg" onclick="toggleMM()"><span></span><span></span><span></span></button>
   </div>
+</nav>
 
-  <!-- THEME PANEL -->
-  <div id="tpov" onclick="closeTP()"></div>
-  <div id="tpanel">
-    <div class="tptit">THEMES <button class="tpcl" onclick="closeTP()">✕</button></div>
-    <div class="tp-grid">
-      <div class="tp-sw active" id="sw-neon" onclick="setTheme('neon')">
-        <div class="tp-dot" style="background:radial-gradient(circle,#39ff14,#070c07)">🟢</div>
-        <div class="tp-nm">TOXIC NEON</div>
-      </div>
-      <div class="tp-sw" id="sw-gold" onclick="setTheme('gold')">
-        <div class="tp-dot" style="background:radial-gradient(circle,#e8b94f,#09080a)">⭐</div>
-        <div class="tp-nm">ROYAL GOLD</div>
-      </div>
-      <div class="tp-sw" id="sw-void" onclick="setTheme('void')">
-        <div class="tp-dot" style="background:radial-gradient(circle,#b44fff,#060409)">🔮</div>
-        <div class="tp-nm">VOID PURPLE</div>
-      </div>
-      <div class="tp-sw" id="sw-ice" onclick="setTheme('ice')">
-        <div class="tp-dot" style="background:radial-gradient(circle,#00d4ff,#030a0e)">❄️</div>
-        <div class="tp-nm">ICE BLUE</div>
-      </div>
-      <div class="tp-sw" id="sw-ember" onclick="setTheme('ember')">
-        <div class="tp-dot" style="background:radial-gradient(circle,#ff6b2b,#0a0603)">🔥</div>
-        <div class="tp-nm">EMBER FIRE</div>
-      </div>
-      <div class="tp-sw" id="sw-ghost" onclick="setTheme('ghost')">
-        <div class="tp-dot" style="background:radial-gradient(circle,#ccc,#f5f3ef)">🤍</div>
-        <div class="tp-nm">GHOST WHITE</div>
-      </div>
-    </div>
-    <div class="tp-inf" id="tp-inf">Orbitron · Rajdhani · Share Tech Mono<br>Terminal phosphor green.</div>
+<!-- THEME PANEL -->
+<div id="tpov" onclick="closeTP()"></div>
+<div id="tpanel">
+  <div class="tptit">THEMES <button class="tpcl" onclick="closeTP()">✕</button></div>
+  <div class="tp-grid">
+    <div class="tp-sw active" id="sw-neon"  onclick="setTheme('neon')"><div class="tp-dot">🟣</div><div class="tp-nm">DEFAULT</div></div>
+    <div class="tp-sw"        id="sw-gold"  onclick="setTheme('gold')"><div class="tp-dot">⭐</div><div class="tp-nm">ROYAL GOLD</div></div>
+    <div class="tp-sw"        id="sw-void"  onclick="setTheme('void')"><div class="tp-dot">🔮</div><div class="tp-nm">VOID</div></div>
+    <div class="tp-sw"        id="sw-ice"   onclick="setTheme('ice')"><div class="tp-dot">❄️</div><div class="tp-nm">ICE BLUE</div></div>
+    <div class="tp-sw"        id="sw-ember" onclick="setTheme('ember')"><div class="tp-dot">🔥</div><div class="tp-nm">EMBER</div></div>
+    <div class="tp-sw"        id="sw-ghost" onclick="setTheme('ghost')"><div class="tp-dot">🤍</div><div class="tp-nm">LIGHT</div></div>
   </div>
+  <div class="tp-inf" id="tp-inf">Dark · Violet accent · Premium.</div>
+</div>
 
-  <!-- ═══════════════════════════════════════
+<!-- MOBILE MENU -->
+<div id="mmenu">
+  <button class="mmb" onclick="openSearch();closeMM()">🔍 Search Plugins</button>
+  <button class="mmb" onclick="G('landing');closeMM()">🏠 Home</button>
+  <button class="mmb" onclick="scrollBrowse();closeMM()">📦 Browse Plugins</button>
+  <button class="mmb" id="mm-lb" onclick="G('auth');swT('login');closeMM()">Login</button>
+  <button class="mmb pri" id="mm-rb" onclick="G('auth');swT('register');closeMM()">Get Started Free</button>
+  <button class="mmb" id="mm-db" style="display:none" onclick="G('dash');closeMM()">Dashboard</button>
+  <button class="mmb" id="mm-lo" style="display:none" onclick="logout()">Logout</button>
+</div>
+
+<!-- ═══════════════════════════════════════
   LANDING PAGE
 ═══════════════════════════════════════ -->
-  <div id="pg-landing" class="page active">
+<div id="pg-landing" class="page active">
 
-    <!-- HERO -->
-    <section class="hero">
-      <div class="hgrid"></div>
-      <div class="hrad"></div>
-      <div class="hcnt">
-        <div class="h-eb">✦ The Minecraft Plugin Platform</div>
-        <h1>Share. Discover.<span class="acc">Deploy.</span></h1>
-        <p class="h-sub">The open platform for Minecraft plugins, mods, and server setups. Upload your work, track real
-          downloads, and discover tools that power the best servers.</p>
-        <div class="h-cta">
-          <button class="btn btn-p" style="padding:12px 30px;" onclick="G('auth');swT('register')">Get Started
-            →</button>
-          <button class="btn btn-o" style="padding:12px 30px;" onclick="scrollBrowse()">Browse Plugins</button>
-        </div>
-        <div class="hstats">
-          <div>
-            <div class="snum" id="sc1">0</div>
-            <div class="slbl">Plugins</div>
-          </div>
-          <div>
-            <div class="snum" id="sc2">0</div>
-            <div class="slbl">Downloads</div>
-          </div>
-          <div>
-            <div class="snum" id="sc3">0</div>
-            <div class="slbl">Creators</div>
-          </div>
-          <div>
-            <div class="snum" id="sc4">0</div>
-            <div class="slbl">MC Versions</div>
-          </div>
-        </div>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hgrid"></div>
+    <div class="hrad"></div>
+    <div class="hcnt">
+      <div class="h-eb">The Minecraft Plugin Platform</div>
+      <h1>Share. Discover.<span class="acc">Deploy.</span></h1>
+      <p class="h-sub">The open platform for Minecraft plugins, mods, and server setups. Upload your work, track real downloads, and discover tools that power the best servers.</p>
+      <div class="h-cta">
+        <button class="btn btn-p" onclick="G('auth');swT('register')">Get Started →</button>
+        <button class="btn btn-o" onclick="openSearch()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          Search Plugins
+        </button>
       </div>
-    </section>
+      <div class="hstats">
+        <div><div class="snum" id="sc1">0</div><div class="slbl">Plugins</div></div>
+        <div><div class="snum" id="sc2">0</div><div class="slbl">Downloads</div></div>
+        <div><div class="snum" id="sc3">0</div><div class="slbl">Creators</div></div>
+        <div><div class="snum" id="sc4">0</div><div class="slbl">MC Versions</div></div>
+      </div>
+    </div>
+  </section>
 
-    <!-- FEATURES -->
-    <section class="section alt">
-      <div class="sch">
-        <h2>Why Zapela?</h2>
-        <p>Everything a Minecraft developer needs — nothing they don't.</p>
-      </div>
-      <div class="fgrid">
-        <div class="fc">
-          <div class="fc-ico">↑</div>
-          <h3>Fast Uploads</h3>
-          <p>Drag-and-drop .jar and .zip archives. Versioned releases with changelogs and dependency tracking.</p>
-        </div>
-        <div class="fc">
-          <div class="fc-ico">⚡</div>
-          <h3>Instant CDN</h3>
-          <p>Mirror CDN ensures zero-downtime downloads worldwide. Per-version tracking built in.</p>
-        </div>
-        <div class="fc">
-          <div class="fc-ico">◈</div>
-          <h3>Live Dashboard</h3>
-          <p>Real-time download charts, activity feeds, and analytics in a clean dashboard view.</p>
-        </div>
-        <div class="fc">
-          <div class="fc-ico">/</div>
-          <h3>Open API</h3>
-          <p>RESTful API for server automation. Auto-pull plugin updates on server restart.</p>
-        </div>
-        <div class="fc">
-          <div class="fc-ico">✎</div>
-          <h3>Dev Notes</h3>
-          <p>Built-in notes for changelogs, roadmaps, bug tracking — linked to your plugins.</p>
-        </div>
-        <div class="fc">
-          <div class="fc-ico">★</div>
-          <h3>Community</h3>
-          <p>Ratings, reviews, and verified compatibility tags from thousands of server owners.</p>
-        </div>
-      </div>
-    </section>
+  <!-- FEATURES -->
+  <section class="section alt">
+    <div class="sch reveal">
+      <h2>Why Zapela?</h2>
+      <p>Everything a Minecraft developer needs — nothing they don't.</p>
+    </div>
+    <div class="fgrid reveal-stagger">
+      <div class="fc"><div class="fc-ico">↑</div><h3>Fast Uploads</h3><p>Drag-and-drop .jar and .zip archives. Versioned releases with changelogs and dependency tracking.</p></div>
+      <div class="fc"><div class="fc-ico">⚡</div><h3>Instant CDN</h3><p>Mirror CDN ensures zero-downtime downloads worldwide. Per-version tracking built in.</p></div>
+      <div class="fc"><div class="fc-ico">◈</div><h3>Live Dashboard</h3><p>Real-time download charts, activity feeds, and analytics in a clean dashboard view.</p></div>
+      <div class="fc"><div class="fc-ico">/</div><h3>Open API</h3><p>RESTful API for server automation. Auto-pull plugin updates on server restart.</p></div>
+      <div class="fc"><div class="fc-ico">✎</div><h3>Dev Notes</h3><p>Built-in notes for changelogs, roadmaps, bug tracking — linked to your plugins.</p></div>
+      <div class="fc"><div class="fc-ico">★</div><h3>Community</h3><p>Ratings, reviews, and verified compatibility tags from thousands of server owners.</p></div>
+    </div>
+  </section>
 
-    <!-- BROWSE / TRENDING -->
-    <section class="section" id="browse-section">
-      <div class="sch">
-        <h2>Trending Plugins</h2>
-        <p>Most downloaded this week</p>
-      </div>
-      <div style="display:flex;gap:.6rem;flex-wrap:wrap;justify-content:center;margin-bottom:1.3rem;" id="cat-btns">
-        <button class="btn btn-g acf" onclick="filterL('')">All</button>
-        <button class="btn btn-g" onclick="filterL('ECONOMY')">Economy</button>
-        <button class="btn btn-g" onclick="filterL('PVP')">PVP</button>
-        <button class="btn btn-g" onclick="filterL('RPG')">RPG</button>
-        <button class="btn btn-g" onclick="filterL('ANTI-GRIEF')">Anti-Grief</button>
-        <button class="btn btn-g" onclick="filterL('GAMEMODE')">Gamemode</button>
-      </div>
-      <div class="pgrid" id="lgrid"></div>
-      <div style="text-align:center;margin-top:1.7rem;">
-        <button class="btn btn-o" style="padding:10px 24px;" onclick="G('auth');swT('login')">View All Plugins
-          →</button>
-      </div>
-    </section>
+  <!-- BROWSE / TRENDING -->
+  <section class="section" id="browse-section">
+    <div class="sch reveal">
+      <h2>Trending Plugins</h2>
+      <p>Most downloaded this week · <span class="live-dot"></span>Live from the community</p>
+    </div>
+    <div class="cat-chips" id="cat-chips">
+      <button class="cat-chip active" data-cat="" onclick="filterL('')">All</button>
+      <button class="cat-chip" data-cat="ECONOMY"    onclick="filterL('ECONOMY')">Economy</button>
+      <button class="cat-chip" data-cat="PVP"         onclick="filterL('PVP')">PVP</button>
+      <button class="cat-chip" data-cat="RPG"         onclick="filterL('RPG')">RPG</button>
+      <button class="cat-chip" data-cat="ANTI-GRIEF"  onclick="filterL('ANTI-GRIEF')">Anti-Grief</button>
+      <button class="cat-chip" data-cat="GAMEMODE"    onclick="filterL('GAMEMODE')">Gamemode</button>
+      <button class="cat-chip" data-cat="FACTIONS"    onclick="filterL('FACTIONS')">Factions</button>
+    </div>
+    <div class="pgrid" id="lgrid"></div>
+    <div style="text-align:center;margin-top:2rem;">
+      <button class="btn btn-o" style="padding:.7rem 2rem;" onclick="openSearch()">Explore All Plugins →</button>
+    </div>
+  </section>
 
-    <!-- CTA BANNER -->
-    <section class="section alt" style="padding:3.5rem 1.5rem;text-align:center;">
-      <h2 style="font-size:1.5rem;font-weight:800;color:var(--tx);margin-bottom:.7rem;letter-spacing:-.02em;">Ready to
-        upload?</h2>
-      <p
-        style="color:var(--tx2);margin-bottom:1.6rem;max-width:430px;margin-left:auto;margin-right:auto;line-height:1.6;">
-        Join thousands of developers sharing plugins with the Minecraft community.</p>
-      <button class="btn btn-p" style="padding:12px 36px;" onclick="G('auth');swT('register')">Create Free Account
-        →</button>
-    </section>
-
-    <!-- FOOTER -->
-    <footer>
-      <div class="ftg">
-        <div class="ftb">
-          <span class="nlogo" style="cursor:default;">ZAPELA<em>.gg</em></span>
-          <p>The open platform for Minecraft plugin and mod sharing. Built for developers, by developers.</p>
-        </div>
-        <div class="ftc">
-          <h4>PLATFORM</h4><a href="#">Browse Plugins</a><a href="#">Browse Mods</a><a href="#">Server Setups</a><a
-            href="#">New Releases</a>
-        </div>
-        <div class="ftc">
-          <h4>DEVELOPERS</h4><a href="#">Upload Plugin</a><a href="#">API Docs</a><a href="#">SDK</a><a
-            href="#">Webhooks</a>
-        </div>
-        <div class="ftc">
-          <h4>COMPANY</h4><a href="#">About</a><a href="#">Discord</a><a href="#">Terms</a><a href="#">Privacy</a>
-        </div>
-      </div>
-      <div class="ftbot">
-        <p>© 2026 ZAPELA.GG — ALL RIGHTS RESERVED</p>
-        <p id="ftstats">v2.4.1 · ONLINE</p>
-      </div>
-    </footer>
+  <!-- CTA -->
+  <div class="cta-banner reveal">
+    <h2>Ready to upload?</h2>
+    <p>Join thousands of developers sharing plugins with the Minecraft community.</p>
+    <button class="btn btn-p" style="padding:.75rem 2.5rem;font-size:.95rem;" onclick="G('auth');swT('register')">Create Free Account →</button>
   </div>
 
-  <!-- ═══════════════════════════════════════
+  <!-- FOOTER -->
+  <footer>
+    <div class="ftg">
+      <div class="ftb">
+        <span class="nlogo" style="cursor:default;">ZAPELA<em>.gg</em></span>
+        <p>The open platform for Minecraft plugin and mod sharing. Built for developers, by developers.</p>
+      </div>
+      <div class="ftc">
+        <h4>PLATFORM</h4>
+        <a href="#" onclick="scrollBrowse();return false;">Browse Plugins</a>
+        <a href="#">Browse Mods</a>
+        <a href="#">Server Setups</a>
+        <a href="#">New Releases</a>
+      </div>
+      <div class="ftc">
+        <h4>DEVELOPERS</h4>
+        <a href="#" onclick="G('auth');swT('register');return false;">Upload Plugin</a>
+        <a href="#" onclick="G('auth');swT('login');return false;">API Docs</a>
+        <a href="#">SDK</a>
+        <a href="#">Webhooks</a>
+      </div>
+      <div class="ftc">
+        <h4>COMPANY</h4>
+        <a href="#">About</a>
+        <a href="#">Discord</a>
+        <a href="#">Terms</a>
+        <a href="#">Privacy</a>
+      </div>
+    </div>
+    <div class="ftbot">
+      <p>© 2026 ZAPELA.GG — ALL RIGHTS RESERVED</p>
+      <p id="ftstats">v3.0 · ONLINE</p>
+    </div>
+  </footer>
+</div>
+
+<!-- ═══════════════════════════════════════
   AUTH PAGE
 ═══════════════════════════════════════ -->
-  <div id="pg-auth" class="page">
-    <div class="ag"></div>
-    <div class="ar"></div>
-    <div class="abox">
-      <div class="a-logo">ZAPELA<em>.gg</em></div>
-      <div class="a-tag" id="a-tag">Sign in to your account</div>
-      <div class="a-tabs">
-        <button class="a-tab active" id="tab-l" onclick="swT('login')">LOGIN</button>
-        <button class="a-tab" id="tab-r" onclick="swT('register')">REGISTER</button>
-      </div>
+<div id="pg-auth" class="page">
+  <div class="abox">
+    <div class="a-logo">ZAPELA<em>.gg</em></div>
+    <div class="a-tag" id="a-tag">Sign in to your account</div>
+    <div class="a-tabs">
+      <button class="a-tab active" id="tab-l" onclick="swT('login')">LOGIN</button>
+      <button class="a-tab" id="tab-r" onclick="swT('register')">REGISTER</button>
+    </div>
 
-      <!-- LOGIN FORM -->
-      <div id="form-login" class="a-form">
-        <div class="fg"><label class="fl">Username or Email</label><input type="text" id="l-u" class="fi"
-            placeholder="you@zapela.gg">
-          <div class="ferr" id="err-lu">Required.</div>
-        </div>
-        <div class="fg"><label class="fl">Password</label><input type="password" id="l-p" class="fi"
-            placeholder="••••••••">
-          <div class="ferr" id="err-lp">Required.</div>
-        </div>
-        <div class="ferr" id="err-lm" style="margin-bottom:.5rem;"></div>
-        <button class="a-sub" onclick="doLogin()">Sign In →</button>
-        <div class="a-div">or</div>
-        <button class="btn btn-o" style="width:100%;padding:10px;" onclick="demoLogin()">Demo — No Account
-          Needed</button>
-        <p style="text-align:center;margin-top:.5rem;font-size:.75rem;color:var(--tx3);">Explore the full dashboard
-          instantly</p>
+    <!-- LOGIN -->
+    <div id="form-login" class="a-form">
+      <div class="fg">
+        <label class="fl">Username or Email</label>
+        <input type="text" id="l-u" class="fi" placeholder="you@zapela.gg" autocomplete="username">
+        <div class="ferr" id="err-lu">Required.</div>
       </div>
-
-      <!-- REGISTER FORM -->
-      <div id="form-register" class="a-form" style="display:none">
-        <div class="fg"><label class="fl">Username</label><input type="text" id="r-u" class="fi"
-            placeholder="CoolDevName">
-          <div class="ferr" id="err-ru">Min 3 characters.</div>
-        </div>
-        <div class="fg"><label class="fl">Email</label><input type="email" id="r-e" class="fi"
-            placeholder="you@email.com">
-          <div class="ferr" id="err-re">Valid email required.</div>
-        </div>
-        <div class="fg"><label class="fl">Password</label><input type="password" id="r-p" class="fi"
-            placeholder="Min 8 characters">
-          <div class="ferr" id="err-rp">Min 8 characters.</div>
-        </div>
-        <div class="ferr" id="err-rm" style="margin-bottom:.5rem;"></div>
-        <button class="a-sub" onclick="doRegister()">Create Account →</button>
+      <div class="fg">
+        <label class="fl">Password</label>
+        <input type="password" id="l-p" class="fi" placeholder="••••••••" autocomplete="current-password"
+          onkeydown="if(event.key==='Enter')doLogin()">
+        <div class="ferr" id="err-lp">Required.</div>
       </div>
+      <div class="ferr" id="err-lm" style="margin-bottom:.5rem;"></div>
+      <button class="a-sub" onclick="doLogin()">Sign In →</button>
+      <div class="a-div">or</div>
+      <button class="btn btn-o" style="width:100%;padding:.65rem;" onclick="demoLogin()">Demo — No Account Needed</button>
+      <p style="text-align:center;margin-top:.4rem;font-size:.74rem;color:var(--tx3);">Explore the full dashboard instantly</p>
+    </div>
 
-      <div class="a-back" onclick="G('landing')">← Back to Home</div>
+    <!-- REGISTER -->
+    <div id="form-register" class="a-form" style="display:none">
+      <div class="fg">
+        <label class="fl">Username</label>
+        <input type="text" id="r-u" class="fi" placeholder="CoolDevName" autocomplete="username">
+        <div class="ferr" id="err-ru">Min 3 characters.</div>
+      </div>
+      <div class="fg">
+        <label class="fl">Email</label>
+        <input type="email" id="r-e" class="fi" placeholder="you@email.com" autocomplete="email">
+        <div class="ferr" id="err-re">Valid email required.</div>
+      </div>
+      <div class="fg">
+        <label class="fl">Password</label>
+        <input type="password" id="r-p" class="fi" placeholder="Min 8 characters" autocomplete="new-password"
+          onkeydown="if(event.key==='Enter')doRegister()">
+        <div class="ferr" id="err-rp">Min 8 characters.</div>
+      </div>
+      <div class="ferr" id="err-rm" style="margin-bottom:.5rem;"></div>
+      <button class="a-sub" onclick="doRegister()">Create Account →</button>
+    </div>
+
+    <div class="a-back" onclick="G('landing')">← Back to Home</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+  PLUGIN DETAIL PAGE
+═══════════════════════════════════════ -->
+<div id="pg-detail" class="page">
+  <div class="det-header">
+    <div class="det-hero">
+      <div class="det-ico" id="d-ico">EP</div>
+      <div class="det-info">
+        <h1 id="d-nm">Plugin Name</h1>
+        <div class="by" id="d-au">by Author</div>
+        <div class="det-tags">
+          <span class="tag" id="d-cat">CATEGORY</span>
+          <span class="tag info" id="d-ver">MC 1.21</span>
+          <span class="tag green" id="d-rating">★★★★★</span>
+        </div>
+        <div class="det-actions">
+          <button class="btn btn-p">↓ Download</button>
+          <button class="btn btn-g" id="det-back" onclick="G('landing')">← Back</button>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- ═══════════════════════════════════════
-  DASHBOARD
-═══════════════════════════════════════ -->
-  <div id="pg-dash" class="page">
-    <div id="sbov" onclick="closeSB()"></div>
-
-    <!-- SIDEBAR -->
-    <div class="sidebar" id="sidebar">
-      <div class="sb-u">
-        <div class="sb-row">
-          <div class="av av-sm" id="sb-av">ZP</div>
-          <div>
-            <div class="sb-un" id="sb-un">ZapUser</div>
-            <div class="sb-role">MEMBER</div>
-          </div>
-        </div>
-        <div class="sb-st">● ONLINE</div>
-      </div>
-      <div class="sb-sec">
-        <div class="sb-lbl">MAIN</div>
-        <div class="si active" id="si-ov" onclick="sv('ov')"><span class="si-ic">⊞</span>Overview</div>
-        <div class="si" id="si-pl" onclick="sv('pl')"><span class="si-ic">↑</span>My Plugins<span class="si-bg"
-            id="bg-pl">0</span></div>
-        <div class="si" id="si-an" onclick="sv('an')"><span class="si-ic">◈</span>Analytics</div>
-        <div class="si" id="si-nt" onclick="sv('nt')"><span class="si-ic">✎</span>Notes<span class="si-bg"
-            id="bg-nt">0</span></div>
-        <div class="si" id="si-br" onclick="sv('br')"><span class="si-ic">⊕</span>Browse All</div>
-      </div>
-      <div class="sb-sec">
-        <div class="sb-lbl">ACCOUNT</div>
-        <div class="si" id="si-pr" onclick="sv('pr')"><span class="si-ic">◉</span>Profile</div>
-        <div class="si" id="si-se" onclick="sv('se')"><span class="si-ic">◑</span>Settings</div>
-        <div class="si" id="si-ap" onclick="sv('ap')"><span class="si-ic">/</span>API Keys</div>
-        <div class="si" id="si-th" onclick="sv('th')"><span class="si-ic">◐</span>Themes</div>
-      </div>
-      <div class="sb-bot">
-        <div class="si" style="color:#ff4444" onclick="logout()"><span class="si-ic"
-            style="color:#ff4444">✕</span>Logout</div>
+  <div class="det-body">
+    <div class="det-panel">
+      <h3>DESCRIPTION</h3>
+      <p class="det-desc" id="d-desc" style="font-size:.9rem;color:var(--tx2);line-height:1.8;"></p>
+    </div>
+    <div>
+      <div class="det-panel">
+        <h3>STATS</h3>
+        <div class="det-stat-row"><span>Downloads</span><span id="d-dlnum">0</span></div>
+        <div class="det-stat-row"><span>Rating</span><span id="d-rating2">—</span></div>
+        <div class="det-stat-row"><span>Category</span><span id="d-cat2">—</span></div>
+        <div class="det-stat-row"><span>MC Version</span><span id="d-ver2">—</span></div>
+        <div class="det-stat-row"><span>License</span><span>MIT</span></div>
       </div>
     </div>
+  </div>
+</div>
 
-    <!-- MAIN CONTENT -->
-    <div class="dmain">
-      <!-- Mobile top bar -->
-      <div id="dmbr">
-        <button class="btn-icon" onclick="openSB()">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="3" y1="6" x2="21" y2="6" />
-            <line x1="3" y1="12" x2="21" y2="12" />
-            <line x1="3" y1="18" x2="21" y2="18" />
-          </svg>
-        </button>
-        <span style="font-family:var(--fd);font-size:.68rem;color:var(--a);letter-spacing:.1em;"
-          id="dmbr-tit">OVERVIEW</span>
-      </div>
-
-      <!-- OVERVIEW VIEW -->
-      <div id="view-ov" class="dv active">
-        <div class="dh">
-          <h1>Overview</h1>
-          <p id="dclock">Loading...</p>
-        </div>
-        <div class="metrics" id="ov-met"></div>
-        <div class="g2">
-          <div>
-            <div class="panel">
-              <div class="pt">DOWNLOAD ACTIVITY — LAST 7 DAYS</div>
-              <div class="bwrap" id="bchart"></div>
-              <div class="bllbls"><span class="bllbl">MON</span><span class="bllbl">TUE</span><span
-                  class="bllbl">WED</span><span class="bllbl">THU</span><span class="bllbl">FRI</span><span
-                  class="bllbl">SAT</span><span class="bllbl">SUN</span></div>
-            </div>
-            <div class="panel">
-              <div class="pt">YOUR PLUGINS <span class="pa" onclick="sv('pl')">manage →</span></div>
-              <div id="ov-pl"></div>
-            </div>
-          </div>
-          <div>
-            <div class="panel">
-              <div class="pt">LIVE ACTIVITY</div>
-              <div id="ov-act"></div>
-            </div>
-            <div class="panel">
-              <div class="pt">TOP CATEGORIES</div>
-              <div id="ov-cats"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- MY PLUGINS VIEW -->
-      <div id="view-pl" class="dv">
-        <div class="dh">
-          <h1>My Plugins</h1>
-          <p>Upload and manage your plugins</p>
-        </div>
-        <div class="panel">
-          <div class="pt">UPLOAD NEW PLUGIN</div>
-          <div class="upz" onclick="openUpModal()"><span class="upz-ic">↑</span>
-            <p>Click to upload .jar or .zip plugin</p>
-          </div>
-        </div>
-        <div class="panel">
-          <div class="pt">YOUR PLUGINS (<span id="pl-cnt">0</span>) <span class="pa" onclick="sortPl()">sort by
-              downloads ↓</span></div>
-          <div id="pl-list"></div>
-          <div id="pl-empty"
-            style="text-align:center;padding:2rem;color:var(--tx3);font-family:var(--fm);font-size:.78rem;display:none;">
-            // No plugins yet. Upload your first one above!</div>
-        </div>
-      </div>
-
-      <!-- ANALYTICS VIEW -->
-      <div id="view-an" class="dv">
-        <div class="dh">
-          <h1>Analytics</h1>
-          <p>Download trends and plugin performance</p>
-        </div>
-        <div class="metrics" id="an-met"></div>
-        <div class="g2">
-          <div>
-            <div class="panel">
-              <div class="pt">7-DAY DOWNLOADS PER PLUGIN</div>
-              <div id="an-pp"></div>
-            </div>
-            <div class="panel">
-              <div class="pt">DOWNLOADS BY CATEGORY</div>
-              <div id="an-cat"></div>
-            </div>
-          </div>
-          <div>
-            <div class="panel">
-              <div class="pt">PLUGIN PERFORMANCE</div>
-              <div id="an-perf"></div>
-            </div>
-            <div class="panel">
-              <div class="pt">MILESTONES</div>
-              <div id="an-ms"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- NOTES VIEW -->
-      <div id="view-nt" class="dv">
-        <div class="dh">
-          <h1>Notes</h1>
-          <p>Dev notes, changelogs, bug tracking</p>
-        </div>
-        <div style="display:flex;gap:.6rem;margin-bottom:1.1rem;flex-wrap:wrap;">
-          <button class="btn btn-p" style="padding:8px 16px;" onclick="openNoteModal()">+ New Note</button>
-          <input type="text" class="fi" placeholder="Search notes..." style="max-width:210px;"
-            oninput="filterNotes(this.value)">
-        </div>
-        <div id="notes-list"></div>
-        <div id="notes-empty"
-          style="text-align:center;padding:2rem;color:var(--tx3);font-family:var(--fm);font-size:.78rem;display:none;">
-          // No notes yet. Create your first one!</div>
-      </div>
-
-      <!-- BROWSE ALL VIEW -->
-      <div id="view-br" class="dv">
-        <div class="dh">
-          <h1>Browse All</h1>
-          <p>Discover community plugins</p>
-        </div>
-        <div style="display:flex;gap:.6rem;margin-bottom:1.1rem;flex-wrap:wrap;">
-          <input type="text" class="fi" placeholder="Search plugins..." style="flex:1;min-width:170px;"
-            oninput="filterBrowse(this.value)" id="br-inp">
-          <select class="fi" style="max-width:125px;" onchange="filterBrowse(document.getElementById('br-inp').value)"
-            id="br-cat">
-            <option value="">All Categories</option>
-            <option>ECONOMY</option>
-            <option>PVP</option>
-            <option>RPG</option>
-            <option>ANTI-GRIEF</option>
-            <option>GAMEMODE</option>
-            <option>FACTIONS</option>
-            <option>UTILITY</option>
-            <option>SETUP</option>
-          </select>
-          <select class="fi" style="max-width:115px;" onchange="sortBrowse(this.value)" id="br-sort">
-            <option value="dl">Most Downloaded</option>
-            <option value="name">Name A-Z</option>
-            <option value="new">Newest</option>
-          </select>
-        </div>
-        <div class="pgrid" id="br-grid" style="max-width:100%;"></div>
-        <div id="br-empty" style="text-align:center;padding:2rem;color:var(--tx3);font-family:var(--fm);display:none;">
-          // No plugins found</div>
-      </div>
-
-      <!-- PROFILE VIEW -->
-      <div id="view-pr" class="dv">
-        <div class="dh">
-          <h1>Profile</h1>
-          <p>Your public developer profile</p>
-        </div>
-        <div class="phero">
-          <div class="pbg"></div>
-          <div style="position:relative;z-index:1;display:flex;align-items:center;gap:1.2rem;flex-wrap:wrap;">
-            <div class="av av-lg" id="pr-av">ZP</div>
-            <div>
-              <div style="font-family:var(--fd);font-size:1.15rem;color:var(--tx);margin-bottom:3px;" id="pr-nm">ZapUser
-              </div>
-              <div style="font-family:var(--fm);font-size:.68rem;color:var(--tx3);margin-bottom:8px;" id="pr-em">
-                user@zapela.gg</div>
-              <div style="display:flex;gap:.4rem;flex-wrap:wrap;"><span class="tag">PRO MEMBER</span><span
-                  class="tag info" id="pr-joined">Joined 2026</span></div>
-            </div>
-            <div style="margin-left:auto;text-align:right;">
-              <div style="font-family:var(--fd);font-size:1.3rem;color:var(--a);" id="pr-tdl">0</div>
-              <div style="font-family:var(--fm);font-size:.58rem;color:var(--tx3);">TOTAL DOWNLOADS</div>
-            </div>
-          </div>
-        </div>
-        <div class="g2">
-          <div>
-            <div class="panel">
-              <div class="pt">EDIT PROFILE</div>
-              <div class="fg"><label class="fl">Display Name</label><input type="text" class="fi" id="pf-nm"
-                  placeholder="Your Name"></div>
-              <div class="fg"><label class="fl">Bio</label><textarea class="fi" id="pf-bio"
-                  style="resize:vertical;line-height:1.6;min-height:70px;"
-                  placeholder="Tell the community about yourself..."></textarea></div>
-              <div class="fg"><label class="fl">Website</label><input type="text" class="fi" id="pf-web"
-                  placeholder="https://yoursite.com"></div>
-              <div class="fg"><label class="fl">Discord</label><input type="text" class="fi" id="pf-disc"
-                  placeholder="YourName#1234"></div>
-              <button class="btn btn-p" onclick="saveProfile()">Save Profile →</button>
-            </div>
-          </div>
-          <div>
-            <div class="panel">
-              <div class="pt">YOUR PLUGINS</div>
-              <div id="pr-pl"></div>
-            </div>
-            <div class="panel">
-              <div class="pt">ACCOUNT INFO</div>
-              <div style="display:flex;flex-direction:column;gap:7px;">
-                <div class="info-row"><span class="info-lbl">Username</span><span id="inf-un" class="info-val">—</span>
-                </div>
-                <div class="info-row"><span class="info-lbl">Email</span><span id="inf-em" class="info-val">—</span>
-                </div>
-                <div class="info-row"><span class="info-lbl">Plugins</span><span id="inf-pl"
-                    style="color:var(--a)">0</span></div>
-                <div class="info-row" style="border-bottom:none;"><span class="info-lbl">Total DLs</span><span
-                    id="inf-dl" style="color:var(--a)">0</span></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- SETTINGS VIEW -->
-      <div id="view-se" class="dv">
-        <div class="dh">
-          <h1>Settings</h1>
-          <p>Account and security</p>
-        </div>
-        <div class="g2">
-          <div>
-            <div class="panel">
-              <div class="pt">CHANGE PASSWORD</div>
-              <div class="fg"><label class="fl">Current Password</label><input type="password" class="fi" id="se-cur"
-                  placeholder="••••••••"></div>
-              <div class="fg"><label class="fl">New Password</label><input type="password" class="fi" id="se-new"
-                  placeholder="••••••••"></div>
-              <div class="fg"><label class="fl">Confirm New Password</label><input type="password" class="fi"
-                  id="se-con" placeholder="••••••••"></div>
-              <div class="ferr" id="err-pw" style="margin-bottom:.5rem;"></div>
-              <button class="btn btn-p" onclick="changePw()">Update Password →</button>
-            </div>
-            <div class="panel">
-              <div class="pt">NOTIFICATIONS</div>
-              <div style="display:flex;flex-direction:column;gap:9px;">
-                <label class="notif-row"><input type="checkbox" id="n-dl" checked> Download milestones</label>
-                <label class="notif-row"><input type="checkbox" id="n-rv" checked> New reviews &amp; ratings</label>
-                <label class="notif-row"><input type="checkbox" id="n-co"> Compatibility alerts</label>
-                <label class="notif-row"><input type="checkbox" id="n-fo" checked> New followers</label>
-              </div>
-              <button class="btn btn-g" style="margin-top:.9rem;" onclick="toast('Preferences saved!','green')">Save
-                Preferences</button>
-            </div>
-          </div>
-          <div>
-            <div class="panel">
-              <div class="pt">SESSION INFO</div>
-              <div style="display:flex;flex-direction:column;gap:7px;">
-                <div class="info-row"><span class="info-lbl">Last Login</span><span id="se-ll" class="info-val">—</span>
-                </div>
-                <div class="info-row"><span class="info-lbl">Theme</span><span id="se-th"
-                    style="color:var(--a)">NEON</span></div>
-                <div class="info-row" style="border-bottom:none;"><span class="info-lbl">Registered</span><span
-                    id="se-reg" class="info-val">—</span></div>
-              </div>
-            </div>
-            <div class="panel">
-              <div class="pt">DANGER ZONE</div>
-              <p style="color:var(--tx3);font-size:.82rem;margin-bottom:.9rem;line-height:1.6;">Destructive actions —
-                cannot be undone.</p>
-              <div style="display:flex;flex-direction:column;gap:.6rem;">
-                <button class="btn btn-d" style="text-align:left;justify-content:flex-start;" onclick="clearData()">⚠
-                  Clear All My Data</button>
-                <button class="btn btn-d" style="text-align:left;justify-content:flex-start;" onclick="deleteAcct()">✕
-                  Delete Account</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- API KEYS VIEW -->
-      <div id="view-ap" class="dv">
-        <div class="dh">
-          <h1>API Keys</h1>
-          <p>Automate plugin management</p>
-        </div>
-        <div class="panel">
-          <div class="pt">YOUR API KEY</div>
-          <div class="akey">
-            <span id="ak-val">zap_sk_live_••••••••••••••••••</span>
-            <div style="display:flex;gap:.4rem;flex-wrap:wrap;">
-              <button class="btn-sm" onclick="revealKey()">SHOW</button>
-              <button class="btn-sm" onclick="copyKey()">COPY</button>
-              <button class="btn-sm" onclick="regenKey()">REGEN</button>
-            </div>
-          </div>
-          <div style="margin-top:.7rem;display:flex;gap:.5rem;flex-wrap:wrap;">
-            <span class="tag info">1000 req/hr</span>
-            <span class="tag">read + write</span>
-            <span class="tag amber" id="ak-usage">Used: 0/1000</span>
-          </div>
-        </div>
-        <div class="panel">
-          <div class="pt">CODE EXAMPLES</div>
-          <pre class="code-block">// Get all your plugins
-curl -H "Authorization: Bearer YOUR_KEY" \
-  https://api.zapela.gg/v1/me/plugins
-
-// Download latest version
-curl -H "Authorization: Bearer YOUR_KEY" \
-  https://api.zapela.gg/v1/plugins/{id}/download
-
-// Auto-update bash script
-zapela update --all --api-key YOUR_KEY</pre>
-        </div>
-      </div>
-
-      <!-- THEMES VIEW -->
-      <div id="view-th" class="dv">
-        <div class="dh">
-          <h1>Themes</h1>
-          <p>Customize the look and feel</p>
-        </div>
-        <div class="theme-cards">
-          <div class="panel theme-card" onclick="setTheme('neon')">
-            <div class="theme-preview" style="background:radial-gradient(circle,#39ff14 0%,#070c07 70%);"></div>
-            <div class="theme-card-name">TOXIC NEON</div>
-            <div class="theme-card-sub">Orbitron · Green</div>
-          </div>
-          <div class="panel theme-card" onclick="setTheme('gold')">
-            <div class="theme-preview" style="background:radial-gradient(circle,#e8b94f 0%,#09080a 70%);"></div>
-            <div class="theme-card-name">ROYAL GOLD</div>
-            <div class="theme-card-sub">Cinzel · Gold</div>
-          </div>
-          <div class="panel theme-card" onclick="setTheme('void')">
-            <div class="theme-preview" style="background:radial-gradient(circle,#b44fff 0%,#060409 70%);"></div>
-            <div class="theme-card-name">VOID PURPLE</div>
-            <div class="theme-card-sub">Syne · Purple</div>
-          </div>
-          <div class="panel theme-card" onclick="setTheme('ice')">
-            <div class="theme-preview" style="background:radial-gradient(circle,#00d4ff 0%,#030a0e 70%);"></div>
-            <div class="theme-card-name">ICE BLUE</div>
-            <div class="theme-card-sub">Bebas Neue · Cyan</div>
-          </div>
-          <div class="panel theme-card" onclick="setTheme('ember')">
-            <div class="theme-preview" style="background:radial-gradient(circle,#ff6b2b 0%,#0a0603 70%);"></div>
-            <div class="theme-card-name">EMBER FIRE</div>
-            <div class="theme-card-sub">Bebas · Orange</div>
-          </div>
-          <div class="panel theme-card" onclick="setTheme('ghost')">
-            <div class="theme-preview" style="background:radial-gradient(circle,#ccc 0%,#f5f3ef 70%);"></div>
-            <div class="theme-card-name">GHOST WHITE</div>
-            <div class="theme-card-sub">Cinzel · Light</div>
-          </div>
-        </div>
-      </div>
-
-    </div><!-- /dmain -->
-  </div><!-- /pg-dash -->
-
-  <!-- ═══════════════════════════════════════
-  PLUGIN DETAIL PAGE
+<!-- ═══════════════════════════════════════
+  DASHBOARD
 ═══════════════════════════════════════ -->
-  <div id="pg-detail" class="page">
-    <div style="max-width:880px;margin:0 auto;">
-      <button class="btn btn-g" id="det-back" style="margin-bottom:1.3rem;">← Back</button>
-      <div class="dhero">
-        <div class="pbg"></div>
-        <div style="position:relative;z-index:1;display:flex;align-items:flex-start;gap:1.1rem;flex-wrap:wrap;">
-          <div class="p-ico" style="width:64px;height:64px;font-size:.85rem;" id="d-ico">EP</div>
-          <div style="flex:1;">
-            <h1 id="d-nm"
-              style="font-family:var(--fd);font-size:1.45rem;color:var(--tx);margin-bottom:5px;letter-spacing:.03em;">
-            </h1>
-            <div id="d-au" style="color:var(--tx3);font-family:var(--fm);font-size:.74rem;margin-bottom:8px;"></div>
-            <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;">
-              <span class="tag" id="d-cat"></span>
-              <span class="tag info" id="d-ver"></span>
-              <span style="color:var(--a);font-family:var(--fm);font-size:.74rem;" id="d-dl"></span>
-              <span style="color:#e8b94f;font-family:var(--fm);font-size:.74rem;">★ 4.8</span>
-            </div>
-          </div>
-          <button class="btn btn-p" style="padding:11px 24px;" onclick="toast('Download started!','green')">Download
-            →</button>
+<div id="pg-dash" class="page">
+  <div id="sbov" onclick="closeSB()"></div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <div class="sb-u">
+      <div class="sb-row">
+        <div class="av av-sm" id="sb-av">ZP</div>
+        <div>
+          <div class="sb-un" id="sb-un">ZapUser</div>
+          <div class="sb-role">MEMBER</div>
         </div>
       </div>
+      <div class="sb-st">● ONLINE</div>
+    </div>
+    <div class="sb-sec">
+      <div class="sb-lbl">MAIN</div>
+      <div class="si active" id="si-ov" onclick="sv('ov')"><span class="si-ic">⊞</span>Overview</div>
+      <div class="si" id="si-pl" onclick="sv('pl')"><span class="si-ic">↑</span>My Plugins<span class="si-bg" id="bg-pl">0</span></div>
+      <div class="si" id="si-an" onclick="sv('an')"><span class="si-ic">◈</span>Analytics</div>
+      <div class="si" id="si-nt" onclick="sv('nt')"><span class="si-ic">✎</span>Notes<span class="si-bg" id="bg-nt">0</span></div>
+      <div class="si" id="si-br" onclick="sv('br')"><span class="si-ic">⊕</span>Browse All</div>
+    </div>
+    <div class="sb-sec">
+      <div class="sb-lbl">ACCOUNT</div>
+      <div class="si" id="si-pr" onclick="sv('pr')"><span class="si-ic">◉</span>Profile</div>
+      <div class="si" id="si-se" onclick="sv('se')"><span class="si-ic">◑</span>Settings</div>
+      <div class="si" id="si-ap" onclick="sv('ap')"><span class="si-ic">/</span>API Keys</div>
+    </div>
+    <div class="sb-bot">
+      <div class="si" style="color:var(--red)" onclick="logout()"><span class="si-ic" style="color:var(--red)">✕</span>Logout</div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="dmain">
+    <div id="dmbr">
+      <button class="btn-icon" onclick="openSB()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+      <span style="font-family:var(--fm);font-size:.68rem;color:var(--a);letter-spacing:.1em;" id="dmbr-tit">OVERVIEW</span>
+    </div>
+
+    <!-- OVERVIEW -->
+    <div id="view-ov" class="dv active">
+      <div class="dh">
+        <h1>Overview</h1>
+        <p id="dclock">Loading…</p>
+      </div>
+      <div class="metrics" id="ov-met"></div>
       <div class="g2">
         <div>
           <div class="panel">
-            <div class="pt">DESCRIPTION</div>
-            <p id="d-desc" style="color:var(--tx2);font-size:.88rem;line-height:1.7;"></p>
+            <div class="pt">DOWNLOAD ACTIVITY — LAST 7 DAYS</div>
+            <div class="bwrap" id="bchart"></div>
+            <div class="bllbls"><span class="bllbl">MON</span><span class="bllbl">TUE</span><span class="bllbl">WED</span><span class="bllbl">THU</span><span class="bllbl">FRI</span><span class="bllbl">SAT</span><span class="bllbl">SUN</span></div>
           </div>
           <div class="panel">
-            <div class="pt">VERSION HISTORY</div>
-            <div class="urow">
-              <div style="flex:1">
-                <div class="unm">v3.2 — Latest</div>
-                <div class="umt">Released 2d ago · .jar · 124KB</div>
-              </div><span class="tag">LATEST</span>
-            </div>
-            <div class="urow">
-              <div style="flex:1">
-                <div class="unm">v3.1</div>
-                <div class="umt">Released 15d ago</div>
-              </div>
-            </div>
-            <div class="urow">
-              <div style="flex:1">
-                <div class="unm">v3.0</div>
-                <div class="umt">Released 2mo ago</div>
-              </div>
-            </div>
+            <div class="pt">YOUR PLUGINS <span class="pa" onclick="sv('pl')">manage →</span></div>
+            <div id="ov-pl"></div>
           </div>
         </div>
         <div>
           <div class="panel">
-            <div class="pt">STATS</div>
-            <div class="g2e" style="margin-bottom:.5rem;">
-              <div class="met">
-                <div class="mv" id="d-dlnum">—</div>
-                <div class="ml">Downloads</div>
-              </div>
-              <div class="met">
-                <div class="mv">★4.8</div>
-                <div class="ml">Rating</div>
-              </div>
-            </div>
+            <div class="pt">LIVE ACTIVITY</div>
+            <div id="ov-act"></div>
           </div>
           <div class="panel">
-            <div class="pt">REQUIREMENTS</div>
-            <table style="width:100%;font-size:.78rem;border-collapse:collapse;">
-              <tr>
-                <td class="req-lbl" style="border-bottom:1px solid var(--br);">Server</td>
-                <td class="req-val" style="border-bottom:1px solid var(--br);">Paper / Spigot</td>
-              </tr>
-              <tr>
-                <td class="req-lbl" style="border-bottom:1px solid var(--br);">Java</td>
-                <td class="req-val" style="border-bottom:1px solid var(--br);">17+</td>
-              </tr>
-              <tr>
-                <td class="req-lbl">MC Version</td>
-                <td id="d-ver2" class="req-val"></td>
-              </tr>
-            </table>
+            <div class="pt">TOP CATEGORIES</div>
+            <div id="ov-cats"></div>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- MODAL CONTAINER -->
-  <div id="modal-root"></div>
+    <!-- MY PLUGINS -->
+    <div id="view-pl" class="dv">
+      <div class="dh">
+        <h1>My Plugins</h1>
+        <p>Upload and manage your plugins</p>
+      </div>
+      <div class="panel">
+        <div class="pt">UPLOAD NEW PLUGIN</div>
+        <div class="upz" onclick="openUpModal()">
+          <span class="upz-ic">↑</span>
+          <p>Click to upload <strong style="color:var(--a)">.jar</strong> or <strong style="color:var(--a)">.zip</strong> plugin</p>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="pt">YOUR PLUGINS (<span id="pl-cnt">0</span>) <span class="pa" onclick="sortPl()">sort by downloads ↓</span></div>
+        <div id="pl-list"></div>
+        <div id="pl-empty" style="text-align:center;padding:2rem;color:var(--tx3);font-family:var(--fm);font-size:.78rem;display:none;">// No plugins yet. Upload your first one above!</div>
+      </div>
+    </div>
 
-  <!-- ═══════════════════════════════════════
-  SCRIPTS — ORDER MATTERS
-═══════════════════════════════════════ -->
-  <script src="db.js"></script>
-  <script src="auth.js"></script>
-  <script src="dashboard.js"></script>
-  <script src="app.js"></script>
+    <!-- ANALYTICS -->
+    <div id="view-an" class="dv">
+      <div class="dh">
+        <h1>Analytics</h1>
+        <p>Download trends and plugin performance</p>
+      </div>
+      <div class="metrics" id="an-met"></div>
+      <div class="g2">
+        <div>
+          <div class="panel"><div class="pt">7-DAY DOWNLOADS PER PLUGIN</div><div id="an-pp"></div></div>
+          <div class="panel"><div class="pt">DOWNLOADS BY CATEGORY</div><div id="an-cat"></div></div>
+        </div>
+        <div>
+          <div class="panel"><div class="pt">PLUGIN PERFORMANCE</div><div id="an-perf"></div></div>
+          <div class="panel"><div class="pt">MILESTONES</div><div id="an-ms"></div></div>
+        </div>
+      </div>
+    </div>
 
+    <!-- NOTES -->
+    <div id="view-nt" class="dv">
+      <div class="dh">
+        <h1>Dev Notes</h1>
+        <p>Changelogs, bug tracking, roadmaps</p>
+      </div>
+      <div style="display:flex;gap:.6rem;margin-bottom:1.1rem;flex-wrap:wrap;align-items:center;">
+        <button class="btn btn-p" onclick="openNoteModal()">+ New Note</button>
+        <input type="text" class="fi" placeholder="Search notes…" style="max-width:220px;" oninput="filterNotes(this.value)">
+      </div>
+      <div id="notes-list"></div>
+      <div id="notes-empty" style="text-align:center;padding:2rem;color:var(--tx3);font-family:var(--fm);font-size:.78rem;display:none;">// No notes yet. Create your first one!</div>
+    </div>
+
+    <!-- BROWSE ALL -->
+    <div id="view-br" class="dv">
+      <div class="dh">
+        <h1>Browse All</h1>
+        <p>Discover community plugins</p>
+      </div>
+      <div style="display:flex;gap:.6rem;margin-bottom:1.1rem;flex-wrap:wrap;">
+        <input type="text" class="fi" placeholder="Search plugins…" style="flex:1;min-width:170px;" oninput="filterBrowse(this.value)" id="br-inp">
+        <select class="fi" style="max-width:130px;" onchange="filterBrowse(document.getElementById('br-inp').value)" id="br-cat">
+          <option value="">All Categories</option>
+          <option>ECONOMY</option><option>PVP</option><option>RPG</option>
+          <option>ANTI-GRIEF</option><option>GAMEMODE</option><option>FACTIONS</option>
+          <option>UTILITY</option><option>SETUP</option>
+        </select>
+        <select class="fi" style="max-width:130px;" onchange="sortBrowse(this.value)" id="br-sort">
+          <option value="dl">Most Downloaded</option>
+          <option value="rating">Top Rated</option>
+          <option value="name">Name A-Z</option>
+        </select>
+      </div>
+      <div class="pgrid" id="br-grid" style="max-width:100%;"></div>
+      <div id="br-empty" style="text-align:center;padding:2rem;color:var(--tx3);font-family:var(--fm);display:none;">// No plugins found</div>
+    </div>
+
+    <!-- PROFILE -->
+    <div id="view-pr" class="dv">
+      <div class="dh">
+        <h1>Profile</h1>
+        <p>Your public developer profile</p>
+      </div>
+      <div class="phero">
+        <div class="pbg"></div>
+        <div style="position:relative;z-index:1;display:flex;align-items:center;gap:1.2rem;flex-wrap:wrap;">
+          <div class="av av-xl" id="pr-av">ZP</div>
+          <div>
+            <div style="font-family:var(--fd);font-size:1.2rem;font-weight:800;color:var(--tx);margin-bottom:3px;" id="pr-nm">ZapUser</div>
+            <div style="font-family:var(--fm);font-size:.7rem;color:var(--tx3);margin-bottom:8px;" id="pr-em">user@zapela.gg</div>
+            <div style="font-size:.85rem;color:var(--tx2);" id="pr-bio">No bio yet.</div>
+            <div style="font-size:.72rem;color:var(--tx3);font-family:var(--fm);margin-top:.4rem;" id="pr-joined"></div>
+          </div>
+        </div>
+        <div style="position:relative;z-index:1;display:flex;margin-top:1rem;background:var(--bg4);border-radius:var(--r3);overflow:hidden;border:1px solid var(--border);" id="pr-stats"></div>
+      </div>
+
+      <div class="panel">
+        <div class="pt">EDIT PROFILE</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;">
+          <div class="fg"><label class="fl">Display Name</label><input type="text" class="fi" id="pr-dn" placeholder="Your display name"></div>
+          <div class="fg"><label class="fl">Discord Handle</label><input type="text" class="fi" id="pr-dc" placeholder="discorduser"></div>
+          <div class="fg"><label class="fl">Website</label><input type="text" class="fi" id="pr-wb" placeholder="https://yoursite.com"></div>
+          <div class="fg"><label class="fl">GitHub</label><input type="text" class="fi" id="pr-gh" placeholder="github-username"></div>
+        </div>
+        <div class="fg"><label class="fl">Bio</label><textarea class="fi" id="pr-bi" placeholder="Tell the community about yourself…" style="resize:vertical;min-height:70px;"></textarea></div>
+        <button class="btn btn-p" onclick="saveProfile()">Save Profile →</button>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="view-se" class="dv">
+      <div class="dh">
+        <h1>Settings</h1>
+        <p>Manage your account preferences</p>
+      </div>
+
+      <div class="se-tabs">
+        <button class="se-tab active" data-tab="profile"  onclick="setSeTab('profile')">Profile</button>
+        <button class="se-tab"        data-tab="security" onclick="setSeTab('security')">Security</button>
+        <button class="se-tab"        data-tab="notifs"   onclick="setSeTab('notifs')">Notifications</button>
+        <button class="se-tab"        data-tab="appear"   onclick="setSeTab('appear')">Appearance</button>
+        <button class="se-tab"        data-tab="danger"   onclick="setSeTab('danger')">Danger Zone</button>
+      </div>
+
+      <!-- Profile tab -->
+      <div id="se-profile" class="se-section active">
+        <div class="se-card">
+          <h3>Display Information</h3>
+          <p class="se-desc">Update your public profile information visible to the community.</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;">
+            <div class="fg"><label class="fl">Display Name</label><input type="text" class="fi" id="se-dn" placeholder="Your display name"></div>
+            <div class="fg"><label class="fl">Discord</label><input type="text" class="fi" id="se-dc" placeholder="discorduser"></div>
+            <div class="fg"><label class="fl">Website</label><input type="text" class="fi" id="se-wb" placeholder="https://yoursite.com"></div>
+            <div class="fg"><label class="fl">GitHub</label><input type="text" class="fi" id="se-gh" placeholder="github-username"></div>
+          </div>
+          <div class="fg"><label class="fl">Bio</label><textarea class="fi" id="se-bio" style="resize:vertical;min-height:80px;" placeholder="Tell the community about yourself…"></textarea></div>
+          <button class="btn btn-p" onclick="saveSettingsProfile()">Save Changes →</button>
+        </div>
+      </div>
+
+      <!-- Security tab -->
+      <div id="se-security" class="se-section">
+        <div class="se-card">
+          <h3>Change Password</h3>
+          <p class="se-desc">Use a strong password of at least 8 characters.</p>
+          <div class="fg"><label class="fl">Current Password</label><input type="password" class="fi" id="se-cur" placeholder="Current password" autocomplete="current-password"></div>
+          <div class="fg"><label class="fl">New Password</label><input type="password" class="fi" id="se-new" placeholder="New password (min 8 chars)" autocomplete="new-password"></div>
+          <div class="fg"><label class="fl">Confirm New Password</label><input type="password" class="fi" id="se-con" placeholder="Confirm new password" autocomplete="new-password"></div>
+          <div class="ferr" id="err-pw"></div>
+          <button class="btn btn-p" onclick="changePw()">Update Password →</button>
+        </div>
+        <div class="se-card">
+          <h3>Active Sessions</h3>
+          <p class="se-desc">You are currently signed in on this device. Sessions expire after 30 days.</p>
+          <div class="urow">
+            <div class="uth" style="background:var(--bg4);border:1px solid var(--border);">💻</div>
+            <div style="flex:1"><div class="unm">Current Session</div><div class="umt">Active now · This browser</div></div>
+            <span class="tag green">ACTIVE</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notifications tab -->
+      <div id="se-notifs" class="se-section">
+        <div class="se-card">
+          <h3>Email Notifications</h3>
+          <p class="se-desc">Choose which notifications you'd like to receive by email.</p>
+          <div class="toggle-row">
+            <div><div class="toggle-label">New Downloads</div><div class="toggle-sublabel">When someone downloads your plugin</div></div>
+            <label class="toggle"><input type="checkbox" id="notif-dl" checked onchange="saveNotifications()"><span class="toggle-track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">New Reviews</div><div class="toggle-sublabel">When you receive a review or rating</div></div>
+            <label class="toggle"><input type="checkbox" id="notif-rv" checked onchange="saveNotifications()"><span class="toggle-track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">Platform Updates</div><div class="toggle-sublabel">New features and platform announcements</div></div>
+            <label class="toggle"><input type="checkbox" id="notif-up" onchange="saveNotifications()"><span class="toggle-track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">Newsletter</div><div class="toggle-sublabel">Monthly community digest</div></div>
+            <label class="toggle"><input type="checkbox" id="notif-nl" onchange="saveNotifications()"><span class="toggle-track"></span></label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Appearance tab -->
+      <div id="se-appear" class="se-section">
+        <div class="se-card">
+          <h3>Color Theme</h3>
+          <p class="se-desc">Current theme: <strong id="se-theme-lbl" style="color:var(--a)">NEON</strong></p>
+          <div class="tp-grid" style="max-width:320px;">
+            <div class="tp-sw" id="se-sw-neon"  onclick="setTheme('neon');setSeTab('appear')"><div class="tp-dot">🟣</div><div class="tp-nm">DEFAULT</div></div>
+            <div class="tp-sw" id="se-sw-gold"  onclick="setTheme('gold');setSeTab('appear')"><div class="tp-dot">⭐</div><div class="tp-nm">ROYAL GOLD</div></div>
+            <div class="tp-sw" id="se-sw-void"  onclick="setTheme('void');setSeTab('appear')"><div class="tp-dot">🔮</div><div class="tp-nm">VOID</div></div>
+            <div class="tp-sw" id="se-sw-ice"   onclick="setTheme('ice');setSeTab('appear')"><div class="tp-dot">❄️</div><div class="tp-nm">ICE BLUE</div></div>
+            <div class="tp-sw" id="se-sw-ember" onclick="setTheme('ember');setSeTab('appear')"><div class="tp-dot">🔥</div><div class="tp-nm">EMBER</div></div>
+            <div class="tp-sw" id="se-sw-ghost" onclick="setTheme('ghost');setSeTab('appear')"><div class="tp-dot">🤍</div><div class="tp-nm">LIGHT</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Danger zone tab -->
+      <div id="se-danger" class="se-section">
+        <div class="danger-card">
+          <h3>⚠ Clear All Data</h3>
+          <p>Permanently delete all your plugins and notes. This cannot be undone. Your account will remain active.</p>
+          <button class="btn btn-d" onclick="clearData()">Clear All Data</button>
+        </div>
+        <div class="danger-card">
+          <h3>⚠ Delete Account</h3>
+          <p>Permanently delete your account and all associated data. This action is irreversible and you will lose access immediately.</p>
+          <button class="btn btn-d" onclick="deleteAcct()">Delete My Account</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- API KEYS -->
+    <div id="view-ap" class="dv">
+      <div class="dh">
+        <h1>API Keys</h1>
+        <p>Integrate Zapela with your server automation</p>
+      </div>
+      <div class="panel">
+        <div class="pt">YOUR API KEY</div>
+        <p style="font-size:.82rem;color:var(--tx2);margin-bottom:.8rem;line-height:1.6;">Use this key to authenticate API requests. Keep it secret — treat it like a password.</p>
+        <div class="key-box" style="margin-bottom:.8rem;">
+          <div class="key-val" id="ak-val">••••••••••••••••••••••••••••••</div>
+          <span class="key-copy" id="ak-reveal" onclick="toggleKeyReveal()">REVEAL</span>
+          <span class="key-copy" onclick="copyApiKey()" style="margin-left:.5rem;">COPY</span>
+        </div>
+        <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
+          <button class="btn btn-g" onclick="copyApiKey()">Copy Key</button>
+          <button class="btn btn-d" onclick="regenKey()">Regenerate</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="pt">USAGE EXAMPLE</div>
+        <p style="font-size:.8rem;color:var(--tx2);margin-bottom:.8rem;">Fetch your plugins via the REST API:</p>
+        <div class="api-example">
+<span class="c-muted"># Fetch your plugins</span>
+<span class="c-purple">curl</span> <span class="c-amber">-H</span> <span class="c-green">"Authorization: Bearer YOUR_API_KEY"</span> \
+     https://zapela.gg/api/me/plugins
+
+<span class="c-muted"># Get platform stats</span>
+<span class="c-purple">curl</span> https://zapela.gg/api/stats
+
+<span class="c-muted"># Response (JSON)</span>
+<span class="c-green">{
+  "plugins": 12,
+  "downloads": "225K",
+  "creators": 892
+}</span>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="pt">RATE LIMITS</div>
+        <div class="det-stat-row"><span>Requests / minute</span><span>120</span></div>
+        <div class="det-stat-row"><span>Requests / day</span><span>10,000</span></div>
+        <div class="det-stat-row"><span>Max payload</span><span>10MB</span></div>
+        <div class="det-stat-row"><span>Response format</span><span>JSON</span></div>
+      </div>
+    </div>
+
+  </div><!-- end .dmain -->
+</div><!-- end #pg-dash -->
+
+<script src="db.js"></script>
+<script src="auth.js"></script>
+<script src="dashboard.js"></script>
+<script src="app.js"></script>
+<script>
+// ── Extra dashboard helpers wired to settings tab ──
+async function saveSettingsProfile() {
+  const displayName = document.getElementById('se-dn')?.value.trim()||'';
+  const bio         = document.getElementById('se-bio')?.value||'';
+  const website     = document.getElementById('se-wb')?.value.trim()||'';
+  const discord     = document.getElementById('se-dc')?.value.trim()||'';
+  const github      = document.getElementById('se-gh')?.value.trim()||'';
+  try {
+    const r = await API.updateProfile({displayName,bio,website,discord,github});
+    APP.displayName = r.displayName;
+    document.getElementById('sb-un').textContent = r.displayName||APP.user;
+    const tl=document.getElementById('se-theme-lbl');
+    toast('Profile saved!','green');
+  } catch(err) { toast('Error: '+err.message,'red'); }
+}
+
+// Pre-fill settings profile tab on open
+const _origRenderSE = renderSE;
+async function renderSE() {
+  await _origRenderSE();
+  try {
+    const u = await API.me();
+    const mapFields = [[u.displayName,'se-dn'],[u.bio,'se-bio'],[u.website,'se-wb'],[u.discord,'se-dc'],[u.github,'se-gh']];
+    mapFields.forEach(([val,id])=>{const el=document.getElementById(id);if(el)el.value=val||'';});
+  } catch {}
+}
+</script>
 </body>
-
 </html>

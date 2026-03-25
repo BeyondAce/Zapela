@@ -1,0 +1,243 @@
+{
+  "users": {
+    "ZapDemo": {
+      "username": "ZapDemo",
+      "email": "demo@zapela.gg",
+      "password": "demo1234",
+      "displayName": "ZapDemo",
+      "bio": "Demo account — explore everything Zapela has to offer!",
+      "website": "",
+      "discord": "",
+      "github": "",
+      "joined": 1771846170326,
+      "lastLogin": 1774438170327,
+      "notifications": {
+        "downloads": true,
+        "reviews": true,
+        "updates": true,
+        "newsletter": false
+      }
+    },
+    "SHENZO": {
+      "username": "SHENZO",
+      "email": "thaheemshabbar@gmail.com",
+      "password": "Cadet9431",
+      "displayName": "SHENZO",
+      "bio": "",
+      "website": "",
+      "discord": "",
+      "github": "",
+      "joined": 1774438639130,
+      "lastLogin": 1774438652403,
+      "notifications": {
+        "downloads": true,
+        "reviews": true,
+        "updates": true,
+        "newsletter": false
+      }
+    }
+  },
+  "sessions": {
+    "715e7957eba6e75c1aa84f95aeb9b5d31f48e871af12d8c788aa7229d1bd8472": {
+      "username": "SHENZO",
+      "created": 1774438639130
+    }
+  },
+  "userPlugins": {
+    "ZapDemo": [],
+    "SHENZO": []
+  },
+  "userNotes": {
+    "ZapDemo": []
+  },
+  "userActivity": {
+    "ZapDemo": [
+      {
+        "msg": "Deleted plugin: QuestCore Beta",
+        "c": "red",
+        "t": 1774438183699
+      },
+      {
+        "msg": "Deleted plugin: PixelGuard",
+        "c": "red",
+        "t": 1774438181876
+      },
+      {
+        "msg": "Deleted plugin: EcoPlugin Pro",
+        "c": "red",
+        "t": 1774438178376
+      },
+      {
+        "msg": "EcoPlugin Pro hit 48K downloads 🎉",
+        "c": "amber",
+        "t": 1774434570326
+      },
+      {
+        "msg": "New ★★★★★ review on PixelGuard",
+        "c": "info",
+        "t": 1774430970326
+      },
+      {
+        "msg": "PixelGuard downloaded by voidcraft",
+        "c": "green",
+        "t": 1774423770326
+      }
+    ],
+    "SHENZO": [
+      {
+        "msg": "Deleted plugin: SST",
+        "c": "red",
+        "t": 1774439280551
+      },
+      {
+        "msg": "Uploaded: SST (draft)",
+        "c": "amber",
+        "t": 1774438668690
+      },
+      {
+        "msg": "Welcome to Zapela! 🚀",
+        "c": "green",
+        "t": 1774438639130
+      }
+    ]
+  },
+  "apiKeys": {},
+  "stats": {
+    "creators": 892,
+    "versions": 24
+  },
+  "communityPlugins": [
+    {
+      "id": "ep",
+      "name": "EcoPlugin Pro",
+      "icon": "EP",
+      "cat": "ECONOMY",
+      "author": "xDevMaster",
+      "ver": "1.20",
+      "dl": 48200,
+      "rating": 4.9,
+      "desc": "Full-featured economy plugin with market signs, bank accounts, shop GUI, multiple currencies, auction houses, and full API hooks."
+    },
+    {
+      "id": "pg",
+      "name": "PixelGuard",
+      "icon": "PG",
+      "cat": "ANTI-GRIEF",
+      "author": "NullByte",
+      "ver": "1.21",
+      "dl": 31700,
+      "rating": 4.8,
+      "desc": "Advanced grief prevention with claim zones, block-level rollback, audit logs, and Discord webhook alerts."
+    },
+    {
+      "id": "sb",
+      "name": "SkyBlock X",
+      "icon": "SB",
+      "cat": "GAMEMODE",
+      "author": "CloudDev",
+      "ver": "1.20",
+      "dl": 29400,
+      "rating": 4.7,
+      "desc": "Complete SkyBlock gamemode with island leveling, challenges, custom mobs, economy integration, and a full GUI menu."
+    },
+    {
+      "id": "cm",
+      "name": "CombatMaster",
+      "icon": "CM",
+      "cat": "PVP",
+      "author": "SteelCraft",
+      "ver": "1.21",
+      "dl": 22100,
+      "rating": 4.6,
+      "desc": "PVP overhaul with combo system, accurate hit registration, kill streaks, leaderboards, and tournament support."
+    },
+    {
+      "id": "tw",
+      "name": "TownWars",
+      "icon": "TW",
+      "cat": "FACTIONS",
+      "author": "Archon",
+      "ver": "1.19",
+      "dl": 19800,
+      "rating": 4.5,
+      "desc": "Factions with town diplomacy, war declarations, territory maps, siege mechanics, and resource war events."
+    },
+    {
+      "id": "qc",
+      "name": "QuestCore",
+      "icon": "QC",
+      "cat": "RPG",
+      "author": "loredev",
+      "ver": "1.20",
+      "dl": 17300,
+      "rating": 4.8,
+      "desc": "RPG quest engine with NPC dialogs, branching objectives, loot tables, and a full reward system."
+    },
+    {
+      "id": "ar",
+      "name": "AutoRank Pro",
+      "icon": "AR",
+      "cat": "UTILITY",
+      "author": "rankify",
+      "ver": "1.21",
+      "dl": 14200,
+      "rating": 4.4,
+      "desc": "Automated rank promotion based on playtime, money, kills, or custom goals. Full PlaceholderAPI and LuckPerms support."
+    },
+    {
+      "id": "vx",
+      "name": "VaultX",
+      "icon": "VX",
+      "cat": "ECONOMY",
+      "author": "CryptoMC",
+      "ver": "1.20",
+      "dl": 11500,
+      "rating": 4.3,
+      "desc": "Next-gen economy backend with vaults, interest rates, cross-server sync, and full EconAPI compatibility."
+    },
+    {
+      "id": "dm",
+      "name": "DungeonMaster",
+      "icon": "DM",
+      "cat": "RPG",
+      "author": "herocraft",
+      "ver": "1.20",
+      "dl": 9300,
+      "rating": 4.6,
+      "desc": "Instanced dungeon system with custom mobs, multi-phase bosses, loot chests, and full party support."
+    },
+    {
+      "id": "ms",
+      "name": "MagicSpells",
+      "icon": "MS",
+      "cat": "RPG",
+      "author": "spelldev",
+      "ver": "1.21",
+      "dl": 8100,
+      "rating": 4.5,
+      "desc": "Custom spell system with 100+ built-in spells, wand items, cooldowns, mana system, and a powerful config API."
+    },
+    {
+      "id": "wg",
+      "name": "WorldGuard+",
+      "icon": "WG",
+      "cat": "ANTI-GRIEF",
+      "author": "guarded",
+      "ver": "1.21",
+      "dl": 7800,
+      "rating": 4.7,
+      "desc": "Region protection system with 80+ flags, entry/exit hooks, visual region display, and full developer API."
+    },
+    {
+      "id": "bs",
+      "name": "BossSpawns",
+      "icon": "BS",
+      "cat": "GAMEMODE",
+      "author": "elitedev",
+      "ver": "1.20",
+      "dl": 6200,
+      "rating": 4.2,
+      "desc": "Custom boss framework with dynamic health bars, multi-phase AI, minion spawning, and configurable drop tables."
+    }
+  ]
+}

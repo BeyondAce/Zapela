@@ -1,8 +1,7 @@
 /**
  * app.js — Zapela.gg Core Application
- * App state, page navigation, themes, nav search,
- * mobile menus, modals, particles, counters, clock.
- * This file runs last and initialises everything.
+ * Page navigation, themes, command palette search,
+ * hero counters (live from API), clock, mobile menus.
  */
 
 // ═══════════════════════════════════════
@@ -11,9 +10,11 @@
 const APP = {
   page: 'landing',
   user: null,
+  displayName: null,
   detailFrom: 'landing',
   theme: localStorage.getItem('zap_theme') || 'neon',
   keyRevealed: false,
+  communityPlugins: [],
 };
 
 // ═══════════════════════════════════════
@@ -24,32 +25,25 @@ function G(page) {
     const el = document.getElementById('pg-' + p);
     if (el) el.classList.remove('active');
   });
-
   const el = document.getElementById('pg-' + page);
   if (el) el.classList.add('active');
-
   APP.page = page;
   window.scrollTo(0, 0);
   closeMM();
-
-  // Update nav active states
   document.querySelectorAll('.nlnk').forEach(b => b.classList.remove('active'));
-  if (page === 'landing') {
-    document.getElementById('nl-home')?.classList.add('active');
-  }
+  if (page === 'landing') document.getElementById('nl-home')?.classList.add('active');
 }
 
 function scrollBrowse() {
   G('landing');
-  setTimeout(() => {
-    document.getElementById('browse-section')?.scrollIntoView({ behavior: 'smooth' });
-  }, 80);
+  setTimeout(() => document.getElementById('browse-section')?.scrollIntoView({ behavior: 'smooth' }), 80);
 }
 
 // ═══════════════════════════════════════
 // PLUGIN DETAIL PAGE
 // ═══════════════════════════════════════
 function openDetail(p) {
+  if (typeof p === 'string') p = JSON.parse(p);
   APP.detailFrom = APP.page;
   G('detail');
 
@@ -58,124 +52,152 @@ function openDetail(p) {
   document.getElementById('d-au').textContent = 'by ' + p.author;
   document.getElementById('d-cat').textContent = p.cat;
   document.getElementById('d-ver').textContent = 'MC ' + p.ver;
-  document.getElementById('d-ver2').textContent = p.ver;
   document.getElementById('d-desc').textContent = p.desc;
-  document.getElementById('d-dl').textContent = '↓ ' + fN(p.dl) + ' downloads';
   document.getElementById('d-dlnum').textContent = fN(p.dl);
+  document.getElementById('d-rating').textContent = p.rating ? '★'.repeat(Math.round(p.rating)) + ' ' + p.rating : 'Unrated';
 
-  document.getElementById('det-back').onclick = () => {
-    G(APP.detailFrom === 'dashboard' ? 'dashboard' : 'landing');
-  };
+  document.getElementById('det-back').onclick = () => G(APP.detailFrom === 'dash' ? 'dash' : 'landing');
 }
 
 // ═══════════════════════════════════════
 // LANDING PAGE GRID
 // ═══════════════════════════════════════
 function renderLanding(cat = '') {
-  let plugins = [...SEED];
+  let plugins = [...APP.communityPlugins];
   if (cat) plugins = plugins.filter(p => p.cat === cat);
+  const grid = document.getElementById('lgrid');
+  grid.innerHTML = plugins.slice(0, 6).map((p, i) => pluginCard(p, i)).join('');
+  // Trigger stagger entrance
+  setTimeout(() => {
+    grid.querySelectorAll('.pc').forEach((el, i) => {
+      setTimeout(() => el.classList.add('card-in'), i * 60);
+    });
+  }, 30);
+}
 
-  document.getElementById('lgrid').innerHTML = plugins.slice(0, 6).map(p => `
+function pluginCard(p) {
+  const stars = p.rating ? '★'.repeat(Math.round(p.rating)) : '';
+  return `
     <div class="pc" onclick='openDetail(${JSON.stringify(p)})'>
-      <div class="p-ico">${p.icon}</div>
+      <div class="p-ico">${esc(p.icon)}</div>
       <div class="p-inf">
-        <div class="p-nm">${p.name}</div>
-        <div class="p-au">by ${p.author}</div>
-        <div class="p-mt"><span class="tag">${p.cat}</span><span class="tag info">${p.ver}</span></div>
+        <div class="p-nm">${esc(p.name)}</div>
+        <div class="p-au">by ${esc(p.author)}</div>
+        <div class="p-mt"><span class="tag">${esc(p.cat)}</span><span class="tag info">MC ${esc(p.ver)}</span></div>
+        ${stars ? `<div class="p-stars">${stars}</div>` : ''}
       </div>
       <div class="p-dl">↓${fN(p.dl)}</div>
-    </div>`).join('');
+    </div>`;
 }
 
 function filterL(cat) {
-  document.querySelectorAll('#cat-btns .btn').forEach(b => {
-    const match = b.textContent.trim() === cat || (cat === '' && b.textContent.trim() === 'All');
-    b.classList.toggle('acf', match);
+  document.querySelectorAll('.cat-chips .cat-chip').forEach(b => {
+    const match = b.dataset.cat === cat;
+    b.classList.toggle('active', match);
   });
   renderLanding(cat);
 }
 
 // ═══════════════════════════════════════
-// NAV SEARCH
+// COMMAND PALETTE SEARCH
 // ═══════════════════════════════════════
-function nsF() {
-  const q = document.getElementById('ns-inp').value.trim().toLowerCase();
-  const cat = document.getElementById('ns-cat').value;
-  const dd = document.getElementById('ns-dd');
+let spActive = -1;
+let spFilter = '';
+let spCurrentPlugins = [];
 
-  if (!q && !cat) { dd.classList.remove('open'); return; }
-
-  let results = SEED.filter(p =>
-    (!cat || p.cat === cat) &&
-    (!q || p.name.toLowerCase().includes(q) || p.author.toLowerCase().includes(q) || p.cat.toLowerCase().includes(q))
-  );
-
-  dd.innerHTML = results.length === 0
-    ? '<div class="sd-emp">// No plugins found</div>'
-    : results.slice(0, 6).map(p => `
-        <div class="sd-item" onclick='openDetail(${JSON.stringify(p)});nsC()'>
-          <div class="sd-ico">${p.icon}</div>
-          <div style="flex:1">
-            <div class="sd-nm">${p.name}</div>
-            <div class="sd-mt">${p.cat} · MC ${p.ver} · by ${p.author}</div>
-          </div>
-          <div class="sd-dl">↓${fN(p.dl)}</div>
-        </div>`).join('');
-
-  dd.classList.add('open');
+function openSearch() {
+  const overlay = document.getElementById('search-overlay');
+  overlay.classList.add('open');
+  document.getElementById('sp-input').value = '';
+  document.getElementById('sp-input').focus();
+  spActive = -1;
+  spFilter = '';
+  document.querySelectorAll('.sp-cat').forEach(b => b.classList.remove('active'));
+  renderSearchResults('');
 }
 
-function nsO() {
-  const hasVal = document.getElementById('ns-inp').value || document.getElementById('ns-cat').value;
-  if (hasVal) nsF();
+function closeSearch() {
+  document.getElementById('search-overlay').classList.remove('open');
+  document.getElementById('sp-input').value = '';
 }
 
-function nsC() {
-  document.getElementById('ns-dd').classList.remove('open');
-  document.getElementById('ns-inp').value = '';
-}
-
-function nsS() {
-  const q = document.getElementById('ns-inp').value.trim();
-  const cat = document.getElementById('ns-cat').value;
-  nsC();
-
-  if (APP.user) {
-    G('dash');
-    sv('br');
-    setTimeout(() => {
-      document.getElementById('br-inp').value = q;
-      document.getElementById('br-cat').value = cat;
-      filterBrowse(q);
-    }, 50);
-  } else {
-    scrollBrowse();
+function renderSearchResults(q) {
+  const resultsEl = document.getElementById('sp-results');
+  let plugins = [...APP.communityPlugins];
+  if (spFilter) plugins = plugins.filter(p => p.cat === spFilter);
+  if (q) {
+    const lq = q.toLowerCase();
+    plugins = plugins.filter(p =>
+      p.name.toLowerCase().includes(lq) ||
+      (p.author || '').toLowerCase().includes(lq) ||
+      (p.desc || '').toLowerCase().includes(lq) ||
+      (p.cat || '').toLowerCase().includes(lq)
+    );
   }
+  spCurrentPlugins = plugins.slice(0, 8);
+  spActive = -1;
+
+  if (spCurrentPlugins.length === 0) {
+    resultsEl.innerHTML = `<div class="sp-empty">No plugins found matching "${esc(q)}"</div>`;
+    return;
+  }
+
+  const label = q || spFilter
+    ? `<div class="sp-section-lbl">Results (${spCurrentPlugins.length})</div>`
+    : `<div class="sp-section-lbl">Trending Plugins</div>`;
+
+  resultsEl.innerHTML = label + spCurrentPlugins.map((p, i) => `
+    <div class="sp-item" data-idx="${i}" onclick='openDetail(${JSON.stringify(p)});closeSearch()'>
+      <div class="sp-item-ico">${esc(p.icon)}</div>
+      <div class="sp-item-info">
+        <div class="sp-item-nm">${esc(p.name)}</div>
+        <div class="sp-item-meta">${esc(p.cat)} · MC ${esc(p.ver)} · by ${esc(p.author)}</div>
+      </div>
+      <div class="sp-item-dl">↓${fN(p.dl)}</div>
+    </div>`).join('');
 }
 
-// Close dropdown on outside click
-document.addEventListener('click', e => {
-  if (!document.getElementById('ns-wrap').contains(e.target)) nsC();
+function setSpFilter(cat, btn) {
+  spFilter = spFilter === cat ? '' : cat;
+  document.querySelectorAll('.sp-cat').forEach(b => b.classList.remove('active'));
+  if (spFilter) btn.classList.add('active');
+  renderSearchResults(document.getElementById('sp-input').value.trim());
+}
+
+// Keyboard navigation in search
+document.addEventListener('keydown', e => {
+  const overlay = document.getElementById('search-overlay');
+  if (!overlay.classList.contains('open')) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); openSearch(); }
+    return;
+  }
+  const items = document.querySelectorAll('.sp-item');
+  if (e.key === 'Escape') { closeSearch(); return; }
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    spActive = Math.min(spActive + 1, items.length - 1);
+    items.forEach((el, i) => el.classList.toggle('sp-focused', i === spActive));
+    items[spActive]?.scrollIntoView({ block: 'nearest' });
+  }
+  if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    spActive = Math.max(spActive - 1, -1);
+    items.forEach((el, i) => el.classList.toggle('sp-focused', i === spActive));
+    if (spActive >= 0) items[spActive]?.scrollIntoView({ block: 'nearest' });
+  }
+  if (e.key === 'Enter' && spActive >= 0 && spCurrentPlugins[spActive]) {
+    openDetail(spCurrentPlugins[spActive]);
+    closeSearch();
+  }
 });
 
-// Mobile search bar
-function mSearch() {
-  const q = document.getElementById('ms-inp').value.trim();
-  closeMM();
-  if (APP.user) {
-    G('dash');
-    sv('br');
-    setTimeout(() => {
-      document.getElementById('br-inp').value = q;
-      filterBrowse(q);
-    }, 50);
-  } else {
-    scrollBrowse();
-  }
-}
+// Close overlay on outside click
+document.getElementById('search-overlay')?.addEventListener('click', e => {
+  if (e.target.id === 'search-overlay') closeSearch();
+});
 
 // ═══════════════════════════════════════
-// MOBILE NAV MENU
+// MOBILE NAV
 // ═══════════════════════════════════════
 function toggleMM() {
   const menu = document.getElementById('mmenu');
@@ -184,10 +206,9 @@ function toggleMM() {
   menu.classList.toggle('open', !isOpen);
   burger.classList.toggle('open', !isOpen);
 }
-
 function closeMM() {
-  document.getElementById('mmenu').classList.remove('open');
-  document.getElementById('hburg').classList.remove('open');
+  document.getElementById('mmenu')?.classList.remove('open');
+  document.getElementById('hburg')?.classList.remove('open');
 }
 
 // ═══════════════════════════════════════
@@ -197,7 +218,6 @@ function openSB() {
   document.getElementById('sidebar').classList.add('open');
   document.getElementById('sbov').classList.add('open');
 }
-
 function closeSB() {
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('sbov').classList.remove('open');
@@ -212,47 +232,35 @@ function modal(html) {
       <div class="mbox">${html}</div>
     </div>`;
 }
-
-function closeModal() {
-  document.getElementById('modal-root').innerHTML = '';
-}
+function closeModal() { document.getElementById('modal-root').innerHTML = ''; }
 
 // ═══════════════════════════════════════
 // THEMES
 // ═══════════════════════════════════════
 const THEME_INFO = {
-  neon: 'Inter · Dark Green · Clean modern.',
-  gold: 'Inter · Gold accent · Warm editorial.',
-  void: 'Inter · Purple accent · Deep space.',
-  ice: 'Inter · Blue accent · Arctic.',
-  ember: 'Inter · Orange accent · Warm fire.',
-  ghost: 'Inter · Light mode · Minimal.',
+  neon:  'Deep dark · Violet accent · Premium.',
+  gold:  'Deep dark · Gold accent · Editorial.',
+  void:  'Deep dark · Purple · Cosmic.',
+  ice:   'Deep dark · Cyan accent · Arctic.',
+  ember: 'Deep dark · Orange · Warm fire.',
+  ghost: 'Light mode · Minimal · Clean.',
 };
 
 function setTheme(theme) {
   APP.theme = theme;
   document.documentElement.setAttribute('data-theme', theme);
   localStorage.setItem('zap_theme', theme);
-
   document.querySelectorAll('.tp-sw').forEach(s => s.classList.remove('active'));
   document.getElementById('sw-' + theme)?.classList.add('active');
-
-  document.getElementById('tp-inf').innerHTML =
-    `<strong style="color:var(--a)">${theme.toUpperCase()}</strong><br>${THEME_INFO[theme] || ''}`;
-
-  // Sync settings view
-  const seTh = document.getElementById('se-th');
+  const info = document.getElementById('tp-inf');
+  if (info) info.innerHTML = `<strong style="color:var(--a)">${theme.toUpperCase()}</strong> · ${THEME_INFO[theme] || ''}`;
+  const seTh = document.getElementById('se-theme-lbl');
   if (seTh) seTh.textContent = theme.toUpperCase();
 }
-
 function toggleTP() {
-  const panel = document.getElementById('tpanel');
-  const overlay = document.getElementById('tpov');
-  const isOpen = panel.classList.contains('open');
-  panel.classList.toggle('open', !isOpen);
-  overlay.classList.toggle('open', !isOpen);
+  document.getElementById('tpanel').classList.toggle('open');
+  document.getElementById('tpov').classList.toggle('open');
 }
-
 function closeTP() {
   document.getElementById('tpanel').classList.remove('open');
   document.getElementById('tpov').classList.remove('open');
@@ -267,58 +275,94 @@ function toast(msg, color = 'green', duration = 3000) {
   el.className = 'toast';
   el.innerHTML = `<div class="tdot ${color}"></div><div style="flex:1;color:var(--tx)">${msg}</div>`;
   container.appendChild(el);
-  setTimeout(() => {
-    el.classList.add('out');
-    setTimeout(() => el.remove(), 300);
-  }, duration);
+  setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 300); }, duration);
 }
 
 // ═══════════════════════════════════════
-// PARTICLES
+// HERO COUNTERS — real backend data only
 // ═══════════════════════════════════════
-function createParticles() {
-  // Particles disabled in Modrinth-style theme
-}
+async function loadAndAnimateStats() {
+  let stats = { plugins: 0, downloads: 0, creators: 0, versions: 0 };
+  try {
+    stats = await API.stats();
+  } catch {}
 
-// ═══════════════════════════════════════
-// COUNTER ANIMATIONS (hero stats)
-// ═══════════════════════════════════════
-function animateCounters() {
-  const totalDl = SEED.reduce((s, p) => s + p.dl, 0);
+  // Format display value and label based on magnitude
+  function displayVal(n) {
+    if (n >= 1_000_000) return { val: +(n / 1_000_000).toFixed(1), suffix: 'M' };
+    if (n >= 1_000)     return { val: +(n / 1_000).toFixed(1), suffix: 'K' };
+    return { val: n, suffix: '' };
+  }
+
   const targets = [
-    ['sc1', SEED.length, ''],
-    ['sc2', Math.floor(totalDl / 1000), 'K'],
-    ['sc3', 892, ''],
-    ['sc4', 24, ''],
+    { id:'sc1', raw: stats.plugins,   label:'Plugins Uploaded' },
+    { id:'sc2', raw: stats.downloads, label:'Total Downloads' },
+    { id:'sc3', raw: stats.creators,  label:'Creators' },
+    { id:'sc4', raw: stats.versions,  label:'MC Versions' },
   ];
 
-  targets.forEach(([id, val, suffix]) => {
-    const el = document.getElementById(id);
+  targets.forEach(({ id, raw, label }, i) => {
+    const el  = document.getElementById(id);
+    const lbl = el?.closest('div')?.querySelector('.slbl');
     if (!el) return;
+    if (lbl) lbl.textContent = label;
+
+    const { val, suffix } = displayVal(raw);
+
+    if (val === 0) { el.textContent = '0'; return; }
+
     let current = 0;
-    const step = val / 60;
-    const interval = setInterval(() => {
-      current = Math.min(current + step, val);
-      el.textContent = Math.floor(current) + suffix;
-      if (current >= val) clearInterval(interval);
-    }, 20);
+    const steps = 60;
+    const step  = val / steps;
+    const delay = i * 80;
+
+    setTimeout(() => {
+      const iv = setInterval(() => {
+        current = Math.min(current + step, val);
+        const disp = Number.isInteger(val) ? Math.floor(current) : current.toFixed(1);
+        el.textContent = disp + suffix;
+        if (current >= val) clearInterval(iv);
+      }, 18);
+    }, delay);
   });
 }
 
 // ═══════════════════════════════════════
-// LIVE CLOCK (dashboard overview)
+// SCROLL REVEAL — IntersectionObserver
+// ═══════════════════════════════════════
+function initScrollReveal() {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('revealed');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+
+  // Observe all reveal-able elements
+  document.querySelectorAll('.reveal, .reveal-stagger > *').forEach((el, i) => {
+    if (el.closest('.reveal-stagger')) {
+      el.style.transitionDelay = (i % 6) * 80 + 'ms';
+    }
+    observer.observe(el);
+  });
+}
+
+// ═══════════════════════════════════════
+// LIVE CLOCK (dashboard)
 // ═══════════════════════════════════════
 function updateClock() {
   const el = document.getElementById('dclock');
   if (!el) return;
   const now = new Date();
   const pad = x => String(x).padStart(2, '0');
-  const day = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][now.getDay()];
+  const day = ['SUN','MON','TUE','WED','THU','FRI','SAT'][now.getDay()];
   el.textContent = `// ${day} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())} · ONLINE`;
 }
 
 // ═══════════════════════════════════════
-// RESPONSIVE — show mobile dash bar
+// RESPONSIVE
 // ═══════════════════════════════════════
 function checkResponsive() {
   const bar = document.getElementById('dmbr');
@@ -329,57 +373,63 @@ window.addEventListener('resize', checkResponsive);
 // ═══════════════════════════════════════
 // UTILITY HELPERS
 // ═══════════════════════════════════════
-
-/** Format a number with K/M suffix */
 function fN(n) {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
   if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
   return String(n);
 }
 
-/** Human-readable time ago */
-function tAgo(timestamp) {
-  const seconds = (Date.now() - timestamp) / 1000;
-  if (seconds < 60) return 'just now';
-  if (seconds < 3600) return Math.floor(seconds / 60) + 'm ago';
-  if (seconds < 86400) return Math.floor(seconds / 3600) + 'h ago';
-  return Math.floor(seconds / 86400) + 'd ago';
+function tAgo(ts) {
+  const s = (Date.now() - ts) / 1000;
+  if (s < 60) return 'just now';
+  if (s < 3600) return Math.floor(s / 60) + 'm ago';
+  if (s < 86400) return Math.floor(s / 3600) + 'h ago';
+  return Math.floor(s / 86400) + 'd ago';
 }
 
-/** Escape HTML special characters */
 function esc(str) {
   return String(str || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 // ═══════════════════════════════════════
 // INITIALISE
 // ═══════════════════════════════════════
-window.addEventListener('load', () => {
-  // Apply saved theme
+window.addEventListener('load', async () => {
   setTheme(APP.theme);
-
-  // Landing page setup
-  renderLanding();
-  document.getElementById('ftstats').textContent = `v2.4.1 · ${SEED.length} plugins · ONLINE`;
-
-  // Hero animations
-  createParticles();
-  setTimeout(animateCounters, 500);
-
-  // Live clock
+  checkResponsive();
   setInterval(updateClock, 1000);
   updateClock();
 
-  // Responsive check
-  checkResponsive();
+  // Trigger hero entrance animation
+  setTimeout(() => document.querySelector('.hcnt')?.classList.add('hero-in'), 80);
 
-  // Restore session (auto-login if session exists)
-  const session = DB.session();
-  if (session && session.u && DB.user(session.u)) {
-    loginOK(session.u);
+  // Load community plugins from backend
+  try {
+    const r = await API.plugins({ sort: 'dl' });
+    APP.communityPlugins = r.plugins || SEED;
+  } catch {
+    APP.communityPlugins = SEED;
+  }
+
+  renderLanding();
+  setTimeout(loadAndAnimateStats, 500);
+  setTimeout(initScrollReveal, 200);
+  document.getElementById('ftstats').textContent = `v3.0 · ${APP.communityPlugins.length} plugins available · ONLINE`;
+
+  // Search input live filter
+  const spInput = document.getElementById('sp-input');
+  if (spInput) {
+    spInput.addEventListener('input', () => renderSearchResults(spInput.value.trim()));
+  }
+
+  // Restore session
+  if (API.token()) {
+    try {
+      const me = await API.me();
+      loginOK(me.username, me.displayName || me.username);
+    } catch {
+      API.clearToken();
+    }
   }
 });
